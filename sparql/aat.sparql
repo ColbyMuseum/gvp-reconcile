@@ -1,0 +1,12 @@
+# AAT sparql query: search by lucene index, 
+# minus the activities facet, and then filtered for entries that are either 
+# objects or materials, then finds exact matches in gvp:term.
+
+select ?entry ?label { 
+	?entry luc:term ?seed_term ; 
+	gvp:prefLabelGVP/xl:literalForm ?label . 
+	filter exists { 
+		?entry (xl:prefLabel|xl:altLabel)/gvp:term ?term . 
+		filter ( lcase(str(?term)) = ?seed_term )
+		}
+}

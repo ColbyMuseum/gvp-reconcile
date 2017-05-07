@@ -1,0 +1,4 @@
+select ?entry ?name {
+	?entry (skos:prefLabel|skos:altLabel) 'seed_term' . 
+	?entry skos:prefLabel ?name
+}
