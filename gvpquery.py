@@ -1,22 +1,23 @@
 """
 gvpquery: class for SPARQL queries against the GVP endpoint, base class for AATQuery and ULANQuery.
 """
-import requests
+import requests, abc
 
+#TODO 0: Wire in as a SparqlWrapper subclass or with a SPARQLQuery property 
 class GVPQuery:
-	# TODO 0: How will this choose from reconciliation candidates
 	
 	def __init__(self, candidate_term):
 		self.url_base = 'http://vocab.getty.edu/sparql.json'
-		self.seed_string = candidate_term
+		self.seed_term = candidate_term
 		self.prefLabel = ""
 		self.URL = ""
 		self.conceptID = ""
 		self.query_results = dict()
 	
+	@abc.abstractmethod
 	def reconcile(self):
+		# Stub for subclass
 		print "Unimplemented!"
-		# Stub for AATQuery and ULANQuery object types
 
 class AATQuery(GVPQuery):
 
@@ -26,10 +27,10 @@ class AATQuery(GVPQuery):
 		# minus the activities facet, and then filtered for entries that are either 
 		# objects or materials, then finds exact matches in gvp:term.
 
-		sparql_query = 'select ?entry ?label { ?entry luc:term "%s"; gvp:prefLabelGVP/xl:literalForm ?label . filter exists { ?entry (xl:prefLabel|xl:altLabel)/gvp:term ?term. filter (lcase(str(?term)) = "%s")}}' % (self.seed_string.lower(),self.seed_string.lower())
+		sparql_query = 'select ?entry ?label { ?entry luc:term ?seed_term ; gvp:prefLabelGVP/xl:literalForm ?label . filter exists { ?entry (xl:prefLabel|xl:altLabel)/gvp:term ?term. filter (lcase(str(?term)) = ?seed_term)}}'.replace("?seed_term",self.seed_string.lower())
 
 		# Send the HTTP request, parse from JSON.
-		# TODO 1: should be try/catch for HTTP errs
+		# TODO 1: should raise HTTP errs
 
 		query_response = requests.get(self.url_base, params={'query': sparql_query})
 		response_json = query_response.json()
@@ -48,7 +49,7 @@ class AATQuery(GVPQuery):
 class ULANQuery(GVPQuery):
 
 	def reconcile(self):
-		sparql_query = "select ?entry ?name {?entry (skos:prefLabel|skos:altLabel) '%s'. ?entry skos:prefLabel ?name}" % self.seed_string
+		sparql_query = "select ?entry ?name {?entry (skos:prefLabel|skos:altLabel) '%s'. ?entry skos:prefLabel ?name}".replace( "?seed_term", self.seed_string.lower()) 
 
 		query_response = requests.get(self.url_base, params={'query': sparql_query})
 		response_json = query_response.json()
